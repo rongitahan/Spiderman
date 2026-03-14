@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Spider-Man Universe — Boss Rush</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,sans-serif;background:#f5f5f0;min-height:100vh;display:flex;justify-content:center;padding:1rem}
+#root{width:100%;max-width:660px}
+button{font-family:inherit;cursor:pointer}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:#f0efe8}
+::-webkit-scrollbar-thumb{background:#ccc;border-radius:99px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef}=React;
+
+const PLAYERS={
+  venom:{id:"venom",name:"Venom",emoji:"🖤",color:"#534AB7",light:"#EEEDFE",dark:"#3C3489",hp:130,desc:"Tanky symbiote brawler. High HP!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="28" ry="30" fill="#1a1a2e"/><ellipse cx="40" cy="38" rx="24" ry="26" fill="#16213e"/><ellipse cx="30" cy="32" rx="9" ry="6" fill="white"/><ellipse cx="50" cy="32" rx="9" ry="6" fill="white"/><ellipse cx="30" cy="32" rx="5" ry="4" fill="#0f3460"/><ellipse cx="50" cy="32" rx="5" ry="4" fill="#0f3460"/><path d="M24 50 Q40 65 56 50" stroke="white" strokeWidth="2" fill="none"/><line x1="28" y1="52" x2="28" y2="58" stroke="white" strokeWidth="1.5"/><line x1="33" y1="55" x2="33" y2="61" stroke="white" strokeWidth="1.5"/><line x1="40" y1="57" x2="40" y2="63" stroke="white" strokeWidth="1.5"/><line x1="47" y1="55" x2="47" y2="61" stroke="white" strokeWidth="1.5"/><line x1="52" y1="52" x2="52" y2="58" stroke="white" strokeWidth="1.5"/><ellipse cx="40" cy="60" rx="6" ry="4" fill="#cc0000"/><path d="M20 30 Q15 20 18 12" stroke="#1a1a2e" strokeWidth="4" fill="none" strokeLinecap="round"/><path d="M60 28 Q66 18 62 10" stroke="#1a1a2e" strokeWidth="4" fill="none" strokeLinecap="round"/></svg>),
+    moves:[{name:"Symbiote Lash",icon:"🖤",dmg:[18,26],desc:"Tendril whip"},{name:"Venom Bite",icon:"🦷",dmg:[22,32],desc:"Toxic chomp"},{name:"We Are Venom",icon:"😤",dmg:[28,38],desc:"Massive slam"},{name:"Symbiote Shield",icon:"🛡️",dmg:[6,10],desc:"Block + counter",sp:"protect"},{name:"Tendril Dodge",icon:"💨",dmg:[0,0],desc:"Dodge next attack!",sp:"dodge"},{name:"Sonic Howl",icon:"🔊",dmg:[32,44],desc:"Deafening scream!",sp:"power"}]},
+  peter:{id:"peter",name:"Spider-Man",emoji:"🕷️",color:"#E24B4A",light:"#FCEBEB",dark:"#A32D2D",hp:100,desc:"Peter Parker. Fast, clever web-slinger.",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="26" ry="28" fill="#cc1111"/><line x1="40" y1="14" x2="40" y2="70" stroke="#880000" strokeWidth="0.8"/><line x1="14" y1="42" x2="66" y2="42" stroke="#880000" strokeWidth="0.8"/><line x1="22" y1="22" x2="58" y2="62" stroke="#880000" strokeWidth="0.8"/><line x1="58" y1="22" x2="22" y2="62" stroke="#880000" strokeWidth="0.8"/><ellipse cx="40" cy="42" rx="8" ry="8" fill="none" stroke="#880000" strokeWidth="0.8"/><ellipse cx="40" cy="42" rx="16" ry="16" fill="none" stroke="#880000" strokeWidth="0.8"/><ellipse cx="40" cy="42" rx="24" ry="24" fill="none" stroke="#880000" strokeWidth="0.8"/><ellipse cx="29" cy="34" rx="10" ry="7" fill="white"/><ellipse cx="51" cy="34" rx="10" ry="7" fill="white"/><ellipse cx="29" cy="34" rx="6" ry="5" fill="#ddd"/><ellipse cx="51" cy="34" rx="6" ry="5" fill="#ddd"/></svg>),
+    moves:[{name:"Web Shot",icon:"🕸️",dmg:[14,20],desc:"Sticky web blast"},{name:"Thwip Combo",icon:"👊",dmg:[18,26],desc:"Fast punch combo"},{name:"Web Slam",icon:"💥",dmg:[22,32],desc:"Slams into wall!"},{name:"Web Shield",icon:"🛡️",dmg:[5,10],desc:"Block + small hit",sp:"protect"},{name:"Spider-Sense",icon:"⚡",dmg:[0,0],desc:"Dodge next attack!",sp:"dodge"},{name:"Fire Web",icon:"🔥",dmg:[30,42],desc:"Symbiote weakness!",sp:"power"}]},
+  miles:{id:"miles",name:"Miles Morales",emoji:"🕸️",color:"#185FA5",light:"#E6F1FB",dark:"#0C447C",hp:110,desc:"Electric Venom Strike & camo power!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="26" ry="28" fill="#111111"/><path d="M14 42 Q20 30 40 28 Q60 30 66 42" stroke="#cc1111" strokeWidth="1.5" fill="none"/><line x1="40" y1="14" x2="40" y2="70" stroke="#cc1111" strokeWidth="0.8"/><line x1="22" y1="22" x2="58" y2="62" stroke="#cc1111" strokeWidth="0.8"/><line x1="58" y1="22" x2="22" y2="62" stroke="#cc1111" strokeWidth="0.8"/><ellipse cx="40" cy="42" rx="12" ry="12" fill="none" stroke="#cc1111" strokeWidth="0.8"/><ellipse cx="40" cy="42" rx="22" ry="22" fill="none" stroke="#cc1111" strokeWidth="0.8"/><ellipse cx="29" cy="33" rx="11" ry="8" fill="white"/><ellipse cx="51" cy="33" rx="11" ry="8" fill="white"/><ellipse cx="29" cy="33" rx="7" ry="5" fill="#cce0ff"/><ellipse cx="51" cy="33" rx="7" ry="5" fill="#cce0ff"/><path d="M10 35 L14 38 L11 41 L15 44" stroke="#4488ff" strokeWidth="1.5" fill="none" strokeLinecap="round"/><path d="M70 35 L66 38 L69 41 L65 44" stroke="#4488ff" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>),
+    moves:[{name:"Web Blast",icon:"🕸️",dmg:[14,22],desc:"Miles's web attack"},{name:"Venom Strike",icon:"⚡",dmg:[24,34],desc:"Electric bio-shock!"},{name:"Camouflage",icon:"👻",dmg:[0,0],desc:"Go invisible!",sp:"dodge"},{name:"Web Shield",icon:"🛡️",dmg:[5,10],desc:"Block + small hit",sp:"protect"},{name:"Leap Slam",icon:"💥",dmg:[20,30],desc:"Flying slam"},{name:"Bio-Venom Burst",icon:"🔵",dmg:[32,44],desc:"Ultimate blast!",sp:"power"}]},
+  spidergirl:{id:"spidergirl",name:"Spider-Girl",emoji:"🩷",color:"#D4537E",light:"#FBEAF0",dark:"#72243E",hp:115,desc:"Mix of Peter & Miles — agile, electric & web master!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="26" ry="28" fill="#cc1177"/><line x1="40" y1="14" x2="40" y2="70" stroke="#880044" strokeWidth="0.8"/><line x1="14" y1="42" x2="66" y2="42" stroke="#880044" strokeWidth="0.8"/><line x1="22" y1="22" x2="58" y2="62" stroke="#880044" strokeWidth="0.8"/><line x1="58" y1="22" x2="22" y2="62" stroke="#880044" strokeWidth="0.8"/><ellipse cx="40" cy="42" rx="10" ry="10" fill="none" stroke="#880044" strokeWidth="0.8"/><ellipse cx="40" cy="42" rx="20" ry="20" fill="none" stroke="#880044" strokeWidth="0.8"/><ellipse cx="29" cy="33" rx="11" ry="8" fill="white"/><ellipse cx="51" cy="33" rx="11" ry="8" fill="white"/><ellipse cx="29" cy="33" rx="7" ry="5" fill="#ffccee"/><ellipse cx="51" cy="33" rx="7" ry="5" fill="#ffccee"/><path d="M16 18 Q20 8 28 14" stroke="#cc1177" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M64 18 Q60 8 52 14" stroke="#cc1177" strokeWidth="2.5" fill="none" strokeLinecap="round"/><path d="M10 32 L14 36 L11 40 L15 43" stroke="#ff44aa" strokeWidth="1.5" fill="none" strokeLinecap="round"/><path d="M70 32 L66 36 L69 40 L65 43" stroke="#ff44aa" strokeWidth="1.5" fill="none" strokeLinecap="round"/></svg>),
+    moves:[{name:"Web Shot",icon:"🕸️",dmg:[14,22],desc:"Fast web blast"},{name:"Electric Kick",icon:"⚡",dmg:[22,32],desc:"Powered-up kick!"},{name:"Flip Dodge",icon:"🩷",dmg:[0,0],desc:"Dodge next attack!",sp:"dodge"},{name:"Web Shield",icon:"🛡️",dmg:[5,10],desc:"Block + counter",sp:"protect"},{name:"Venom Sting",icon:"💥",dmg:[20,30],desc:"Bio-electric slam"},{name:"Pink Web Burst",icon:"🌸",dmg:[34,46],desc:"Ultimate power move!",sp:"power"}]},
+};
+
+const WEATHERS=[
+  {name:"Sunny",icon:"☀️",desc:"+4 dmg for hero",dmgBonus:4,dmgPenalty:0,carnagePenalty:0},
+  {name:"Rainy",icon:"🌧️",desc:"-5 dmg for hero",dmgBonus:0,dmgPenalty:5,carnagePenalty:0},
+  {name:"Stormy",icon:"⛈️",desc:"Everyone -3 dmg",dmgBonus:-3,storm:true,carnagePenalty:3},
+  {name:"Foggy",icon:"🌫️",desc:"Hero may miss 35%",dmgBonus:0,dmgPenalty:0,misschance:true,carnagePenalty:0},
+  {name:"Windy",icon:"💨",desc:"Dodge gives +1 charge",dmgBonus:0,dmgPenalty:0,windDodge:true,carnagePenalty:0},
+  {name:"Snowy",icon:"❄️",desc:"Villain -4 dmg",dmgBonus:0,dmgPenalty:0,carnagePenalty:4},
+];
+
+const LEVELS=[
+  {id:1,name:"Shocker",emoji:"🟡",hp:80,diff:"Easy",desc:"Vibration blasts from his gauntlets. A good warm-up!",color:"#854F0B",light:"#FAEEDA",dark:"#633806",weakness:"web",winMsg:"Shocker's gauntlets are webbed up! He's done!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="26" ry="28" fill="#f5a623"/><rect x="18" y="28" width="44" height="28" rx="4" fill="#cc7700"/><rect x="22" y="32" width="16" height="10" rx="2" fill="#ffcc44"/><rect x="42" y="32" width="16" height="10" rx="2" fill="#ffcc44"/><circle cx="30" cy="37" r="3" fill="#ff8800"/><circle cx="50" cy="37" r="3" fill="#ff8800"/><rect x="26" y="48" width="28" height="5" rx="2" fill="#aa5500"/></svg>),
+    moves:[{name:"Vibro Blast",icon:"🟡",dmg:[12,18]},{name:"Shockwave",icon:"💥",dmg:[16,22]},{name:"Gauntlet Slam",icon:"👊",dmg:[14,20]},{name:"Stun Pulse",icon:"⚡",dmg:[8,14],sp:"stun"}]},
+  {id:2,name:"Vulture",emoji:"🦅",hp:90,diff:"Easy",desc:"Old man with wings who swoops down from above!",color:"#3B6D11",light:"#EAF3DE",dark:"#27500A",weakness:"web",winMsg:"Vulture's wings are webbed! He crashes down!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="45" rx="22" ry="24" fill="#4a7c3f"/><ellipse cx="40" cy="36" rx="18" ry="18" fill="#5a8c4f"/><path d="M18 38 Q8 25 12 15 Q20 28 22 38" fill="#3a6030"/><path d="M62 38 Q72 25 68 15 Q60 28 58 38" fill="#3a6030"/><ellipse cx="33" cy="34" rx="6" ry="5" fill="#88aa44"/><ellipse cx="47" cy="34" rx="6" ry="5" fill="#88aa44"/><circle cx="33" cy="34" r="3" fill="#223311"/><circle cx="47" cy="34" r="3" fill="#223311"/><path d="M36 42 L40 50 L44 42" fill="#cc9900"/></svg>),
+    moves:[{name:"Swoop Attack",icon:"🦅",dmg:[14,20]},{name:"Talon Slash",icon:"✂️",dmg:[16,24]},{name:"Dive Bomb",icon:"💨",dmg:[18,26]},{name:"Wing Buffet",icon:"🌪️",dmg:[10,16],sp:"stun"}]},
+  {id:3,name:"Scorpion",emoji:"🦂",hp:100,diff:"Medium",desc:"Mechanical tail with a venomous sting!",color:"#3B6D11",light:"#EAF3DE",dark:"#27500A",weakness:"web",winMsg:"Scorpion's tail is webbed! He can't sting anymore!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="24" ry="26" fill="#2d6e2d"/><ellipse cx="40" cy="38" rx="20" ry="20" fill="#3a8a3a"/><ellipse cx="30" cy="33" rx="7" ry="5" fill="#1a4a1a"/><ellipse cx="50" cy="33" rx="7" ry="5" fill="#1a4a1a"/><circle cx="30" cy="33" r="3.5" fill="#00cc00"/><circle cx="50" cy="33" r="3.5" fill="#00cc00"/><path d="M28 46 Q40 54 52 46" stroke="#1a4a1a" strokeWidth="2" fill="none"/><path d="M55 25 Q68 15 70 5" stroke="#2d6e2d" strokeWidth="5" fill="none" strokeLinecap="round"/><circle cx="71" cy="4" r="4" fill="#cc4400"/></svg>),
+    moves:[{name:"Tail Whip",icon:"🦂",dmg:[16,24]},{name:"Stinger",icon:"💉",dmg:[20,28]},{name:"Acid Spray",icon:"🟢",dmg:[18,26]},{name:"Pincer Grab",icon:"🤏",dmg:[12,18],sp:"stun"}]},
+  {id:4,name:"Rhino",emoji:"🦏",hp:115,diff:"Medium",desc:"Incredibly strong and almost unstoppable!",color:"#5F5E5A",light:"#F1EFE8",dark:"#2C2C2A",weakness:"web",winMsg:"Rhino is webbed to the wall! He can't budge!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="44" rx="28" ry="28" fill="#888"/><ellipse cx="40" cy="40" rx="24" ry="22" fill="#aaa"/><ellipse cx="30" cy="35" rx="8" ry="6" fill="#666"/><ellipse cx="50" cy="35" rx="8" ry="6" fill="#666"/><circle cx="30" cy="35" r="4" fill="#222"/><circle cx="50" cy="35" r="4" fill="#222"/><ellipse cx="40" cy="20" rx="5" ry="12" fill="#777" transform="rotate(-5,40,20)"/><path d="M28 50 Q40 58 52 50" stroke="#555" strokeWidth="2" fill="none"/></svg>),
+    moves:[{name:"Rhino Charge",icon:"🦏",dmg:[22,32]},{name:"Headbutt",icon:"💥",dmg:[20,28]},{name:"Ground Smash",icon:"👊",dmg:[18,26]},{name:"Stampede",icon:"🌪️",dmg:[14,22],sp:"stun"}]},
+  {id:5,name:"Mysterio",emoji:"🎭",hp:110,diff:"Medium",desc:"Master of illusions! He tricks your eyes and mind.",color:"#185FA5",light:"#E6F1FB",dark:"#0C447C",weakness:"power",winMsg:"The illusion is broken! Mysterio surrenders!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><circle cx="40" cy="38" r="28" fill="#88ccff" fillOpacity="0.3" stroke="#4499cc" strokeWidth="2"/><circle cx="40" cy="38" r="22" fill="#aaddff" fillOpacity="0.2"/><ellipse cx="32" cy="36" rx="5" ry="4" fill="#cc44ff"/><ellipse cx="48" cy="36" rx="5" ry="4" fill="#cc44ff"/><circle cx="32" cy="36" r="2.5" fill="#440066"/><circle cx="48" cy="36" r="2.5" fill="#440066"/><path d="M30 46 Q40 52 50 46" stroke="#cc44ff" strokeWidth="1.5" fill="none"/><ellipse cx="40" cy="66" rx="20" ry="8" fill="#44aaff" fillOpacity="0.4"/></svg>),
+    moves:[{name:"Illusion Strike",icon:"🎭",dmg:[16,24]},{name:"Smoke Bomb",icon:"💨",dmg:[14,22],sp:"stun"},{name:"Hologram Attack",icon:"🌀",dmg:[18,28]},{name:"Mind Trick",icon:"🧠",dmg:[20,30]}]},
+  {id:6,name:"Lizard",emoji:"🦎",hp:120,diff:"Medium",desc:"Dr. Connors mutated into a giant reptile!",color:"#3B6D11",light:"#EAF3DE",dark:"#27500A",weakness:"power",winMsg:"The antidote works! Dr. Connors is himself again!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="44" rx="24" ry="26" fill="#2d7a2d"/><ellipse cx="40" cy="40" rx="20" ry="20" fill="#3a9a3a"/><ellipse cx="30" cy="33" rx="7" ry="5" fill="#1a4a1a"/><ellipse cx="50" cy="33" rx="7" ry="5" fill="#1a4a1a"/><circle cx="30" cy="33" r="3.5" fill="#ffcc00"/><circle cx="50" cy="33" r="3.5" fill="#ffcc00"/><circle cx="30" cy="33" r="1.5" fill="#000"/><circle cx="50" cy="33" r="1.5" fill="#000"/><ellipse cx="40" cy="50" rx="10" ry="6" fill="#2d7a2d"/><path d="M32 50 Q40 56 48 50" stroke="#1a4a1a" strokeWidth="1.5" fill="none"/><path d="M37 55 L40 62 L43 55" fill="#ff4444"/></svg>),
+    moves:[{name:"Claw Slash",icon:"🦎",dmg:[18,26]},{name:"Tail Sweep",icon:"🌀",dmg:[16,24]},{name:"Reptile Bite",icon:"🦷",dmg:[22,30]},{name:"Feral Pounce",icon:"💥",dmg:[14,22],sp:"stun"}]},
+  {id:7,name:"Green Goblin",emoji:"🎃",hp:125,diff:"Hard",desc:"Norman Osborn — Spider-Man's greatest rival!",color:"#3B6D11",light:"#EAF3DE",dark:"#27500A",weakness:"web",winMsg:"The Goblin's glider crashes! New York is safe!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="44" rx="24" ry="26" fill="#2d7a2d"/><ellipse cx="40" cy="40" rx="20" ry="22" fill="#3a9a3a"/><polygon points="18,28 12,10 24,24" fill="#2d7a2d"/><polygon points="62,28 68,10 56,24" fill="#2d7a2d"/><ellipse cx="30" cy="34" rx="8" ry="5" fill="#ffcc00"/><ellipse cx="50" cy="34" rx="8" ry="5" fill="#ffcc00"/><circle cx="30" cy="34" r="3" fill="#aa0000"/><circle cx="50" cy="34" r="3" fill="#aa0000"/><path d="M24 50 Q32 44 40 48 Q48 44 56 50" stroke="#1a4a1a" strokeWidth="2" fill="none"/><path d="M26 52 Q40 62 54 52" stroke="#1a4a1a" strokeWidth="2" fill="#1a4a1a"/><ellipse cx="40" cy="22" rx="20" ry="6" fill="#1a5a1a"/><polygon points="40,2 26,22 54,22" fill="#1a5a1a"/></svg>),
+    moves:[{name:"Pumpkin Bomb",icon:"🎃",dmg:[20,28]},{name:"Glider Slash",icon:"🛸",dmg:[16,24]},{name:"Goblin Cackle",icon:"😈",dmg:[24,34]},{name:"Bomb Barrage",icon:"💣",dmg:[12,20],sp:"stun"}]},
+  {id:8,name:"Kingpin",emoji:"💼",hp:130,diff:"Hard",desc:"Wilson Fisk — crime boss of New York!",color:"#5F5E5A",light:"#F1EFE8",dark:"#2C2C2A",weakness:"web",winMsg:"Kingpin is webbed! His crime empire crumbles!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="46" rx="30" ry="28" fill="#f0e8d0"/><ellipse cx="40" cy="42" rx="26" ry="24" fill="#f5eed8"/><rect x="16" y="58" width="48" height="20" rx="4" fill="#222"/><rect x="34" y="58" width="12" height="20" fill="#fff"/><polygon points="40,60 37,72 40,76 43,72" fill="#cc0000"/><ellipse cx="30" cy="38" rx="6" ry="5" fill="#ddd"/><ellipse cx="50" cy="38" rx="6" ry="5" fill="#ddd"/><circle cx="30" cy="38" r="3" fill="#222"/><circle cx="50" cy="38" r="3" fill="#222"/><path d="M28 52 Q40 58 52 52" stroke="#888" strokeWidth="1.5" fill="none"/></svg>),
+    moves:[{name:"Power Punch",icon:"💼",dmg:[20,30]},{name:"Cane Strike",icon:"🦯",dmg:[18,26]},{name:"Crime Boss Slam",icon:"💪",dmg:[24,34]},{name:"Hired Goons",icon:"👥",dmg:[14,22],sp:"stun"}]},
+  {id:9,name:"Doctor Octopus",emoji:"🐙",hp:140,diff:"Hard",desc:"4 metal tentacles — genius scientist gone evil!",color:"#854F0B",light:"#FAEEDA",dark:"#633806",weakness:"power",winMsg:"Doc Ock's tentacles are webbed up! Science wins!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="22" ry="24" fill="#cc8800"/><ellipse cx="29" cy="34" rx="10" ry="8" fill="#884400"/><ellipse cx="51" cy="34" rx="10" ry="8" fill="#884400"/><ellipse cx="29" cy="34" rx="7" ry="6" fill="#22aaff"/><ellipse cx="51" cy="34" rx="7" ry="6" fill="#22aaff"/><circle cx="29" cy="34" r="3" fill="#0055aa"/><circle cx="51" cy="34" r="3" fill="#0055aa"/><path d="M18 42 Q6 32 8 18" stroke="#884400" strokeWidth="5" fill="none" strokeLinecap="round"/><path d="M18 50 Q4 50 6 64" stroke="#884400" strokeWidth="5" fill="none" strokeLinecap="round"/><path d="M62 42 Q74 32 72 18" stroke="#884400" strokeWidth="5" fill="none" strokeLinecap="round"/><path d="M62 50 Q76 50 74 64" stroke="#884400" strokeWidth="5" fill="none" strokeLinecap="round"/></svg>),
+    moves:[{name:"Tentacle Grab",icon:"🐙",dmg:[20,28],sp:"stun"},{name:"Metal Slam",icon:"🔩",dmg:[22,32]},{name:"Spin Attack",icon:"🌀",dmg:[18,26]},{name:"Four-Arm Strike",icon:"💪",dmg:[26,38]}]},
+  {id:10,name:"Electro",emoji:"⚡",hp:130,diff:"Hard",desc:"Max Dillon — living lightning! Hard to hit!",color:"#185FA5",light:"#E6F1FB",dark:"#0C447C",weakness:"power",winMsg:"Short-circuited! Electro powers down!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="24" ry="26" fill="#2244aa"/><path d="M20 30 L35 28 L28 42 L38 40 L26 58 L42 44 L36 46 L48 28 L38 30 L44 16 Z" fill="#ffee00" fillOpacity="0.9"/><circle cx="30" cy="36" r="4" fill="#ffee00"/><circle cx="52" cy="34" r="4" fill="#ffee00"/><circle cx="30" cy="36" r="2" fill="#ff8800"/><circle cx="52" cy="34" r="2" fill="#ff8800"/></svg>),
+    moves:[{name:"Lightning Bolt",icon:"⚡",dmg:[22,32]},{name:"Electric Cage",icon:"🔵",dmg:[16,24],sp:"stun"},{name:"Thunderclap",icon:"💥",dmg:[26,36]},{name:"Power Surge",icon:"🌩️",dmg:[20,30]}]},
+  {id:11,name:"Harry Osborn",emoji:"🎭",hp:135,diff:"Hard",desc:"Peter's best friend turned villain!",color:"#3B6D11",light:"#EAF3DE",dark:"#27500A",weakness:"web",winMsg:"Harry comes to his senses! Friendship wins!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="44" rx="24" ry="26" fill="#2d7a2d"/><ellipse cx="40" cy="40" rx="20" ry="20" fill="#3a9a3a"/><polygon points="18,30 14,12 26,26" fill="#2d7a2d"/><polygon points="62,30 66,12 54,26" fill="#2d7a2d"/><ellipse cx="30" cy="34" rx="7" ry="5" fill="#ffcc00"/><ellipse cx="50" cy="34" rx="7" ry="5" fill="#ffcc00"/><circle cx="30" cy="34" r="3" fill="#883300"/><circle cx="50" cy="34" r="3" fill="#883300"/><path d="M26 50 Q40 60 54 50" stroke="#1a4a1a" strokeWidth="2" fill="none"/><path d="M26 40 Q24 46 26 50" stroke="#aaddff" strokeWidth="1.5" fill="none"/></svg>),
+    moves:[{name:"Razor Bats",icon:"🦇",dmg:[18,28]},{name:"Glider Ram",icon:"🛸",dmg:[20,30]},{name:"Friendship Betrayal",icon:"💔",dmg:[24,34]},{name:"Bomb Toss",icon:"💣",dmg:[14,22],sp:"stun"}]},
+  {id:12,name:"Kraven",emoji:"🏹",hp:140,diff:"Hard",desc:"The greatest hunter alive!",color:"#854F0B",light:"#FAEEDA",dark:"#633806",weakness:"power",winMsg:"Kraven is defeated! The hunt is over!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="44" rx="24" ry="26" fill="#8B4513"/><ellipse cx="40" cy="40" rx="20" ry="22" fill="#A0522D"/><ellipse cx="30" cy="34" rx="7" ry="6" fill="#6B3410"/><ellipse cx="50" cy="34" rx="7" ry="6" fill="#6B3410"/><circle cx="30" cy="34" r="3.5" fill="#cc6600"/><circle cx="50" cy="34" r="3.5" fill="#cc6600"/><circle cx="30" cy="34" r="1.5" fill="#000"/><circle cx="50" cy="34" r="1.5" fill="#000"/><path d="M22 44 Q26 52 30 56 Q40 60 50 56 Q54 52 58 44" fill="#6B3410"/><rect x="18" y="22" width="44" height="6" rx="3" fill="#cc4400"/></svg>),
+    moves:[{name:"Spear Throw",icon:"🏹",dmg:[22,32]},{name:"Hunter's Pounce",icon:"🐆",dmg:[24,34]},{name:"Poison Dart",icon:"💉",dmg:[18,26],sp:"stun"},{name:"Savage Roar",icon:"🦁",dmg:[20,30]}]},
+  {id:13,name:"Carnage",emoji:"🩸",hp:155,diff:"Very Hard",desc:"Pure chaos — fire is his weakness!",color:"#791F1F",light:"#FCEBEB",dark:"#501313",weakness:"fire",winMsg:"Fire defeats the symbiote! Carnage is jailed!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="26" ry="28" fill="#8b0000"/><path d="M14 30 Q20 24 26 30" stroke="#cc0000" strokeWidth="3" fill="none"/><path d="M66 30 Q60 24 54 30" stroke="#cc0000" strokeWidth="3" fill="none"/><path d="M20 28 Q30 22 36 30" fill="white"/><path d="M60 28 Q50 22 44 30" fill="white"/><path d="M22 30 Q30 25 35 30" fill="#ff4444"/><path d="M58 30 Q50 25 45 30" fill="#ff4444"/><path d="M20 48 Q40 68 60 48" fill="#8b0000"/><path d="M20 48 Q40 64 60 48" stroke="white" strokeWidth="1.5" fill="none"/><line x1="30" y1="50" x2="31" y2="58" stroke="white" strokeWidth="1.5"/><line x1="40" y1="52" x2="41" y2="60" stroke="white" strokeWidth="1.5"/><line x1="50" y1="50" x2="51" y2="58" stroke="white" strokeWidth="1.5"/></svg>),
+    moves:[{name:"Tendril Lash",icon:"🩸",dmg:[24,34]},{name:"Carnage Bite",icon:"🦷",dmg:[26,36]},{name:"Chaos Slam",icon:"😈",dmg:[30,42]},{name:"Symbiote Grab",icon:"🐙",dmg:[16,22],sp:"stun"}]},
+  {id:14,name:"Anti-Venom",emoji:"🩶",hp:160,diff:"Very Hard",desc:"A purified symbiote — powerful and nearly immune to fire!",color:"#444441",light:"#F1EFE8",dark:"#2C2C2A",weakness:"sonic",winMsg:"Anti-Venom's symbiote is cleansed! Victory!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="26" ry="28" fill="#cccccc"/><ellipse cx="40" cy="38" rx="22" ry="24" fill="#eeeeee"/><path d="M14 32 Q20 22 30 28" stroke="#aaaaaa" strokeWidth="3" fill="none"/><path d="M66 32 Q60 22 50 28" stroke="#aaaaaa" strokeWidth="3" fill="none"/><ellipse cx="30" cy="32" rx="9" ry="6" fill="#222"/><ellipse cx="50" cy="32" rx="9" ry="6" fill="#222"/><ellipse cx="30" cy="32" rx="5" ry="4" fill="#555"/><ellipse cx="50" cy="32" rx="5" ry="4" fill="#555"/><path d="M24 50 Q40 64 56 50" stroke="#888" strokeWidth="2" fill="none"/><ellipse cx="40" cy="58" rx="5" ry="3" fill="#cc0000"/></svg>),
+    moves:[{name:"White Tendril",icon:"🩶",dmg:[24,34]},{name:"Cleansing Slam",icon:"💢",dmg:[26,36]},{name:"Symbiote Purge",icon:"🌟",dmg:[28,40]},{name:"Null Grab",icon:"🤍",dmg:[18,26],sp:"stun"}]},
+  {id:15,name:"Morlun",emoji:"🌑",hp:165,diff:"Very Hard",desc:"An ancient being who feeds on Spider-Man's life force!",color:"#3C3489",light:"#EEEDFE",dark:"#26215C",weakness:"power",winMsg:"Morlun is driven back! The Spider-Totem survives!",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="24" ry="26" fill="#1a0a2e"/><ellipse cx="40" cy="38" rx="20" ry="22" fill="#2a1040"/><ellipse cx="30" cy="32" rx="8" ry="6" fill="#8800ff"/><ellipse cx="50" cy="32" rx="8" ry="6" fill="#8800ff"/><ellipse cx="30" cy="32" rx="5" ry="4" fill="#cc44ff"/><ellipse cx="50" cy="32" rx="5" ry="4" fill="#cc44ff"/><circle cx="30" cy="32" r="2" fill="#ffffff"/><circle cx="50" cy="32" r="2" fill="#ffffff"/><path d="M28 52 Q40 60 52 52" stroke="#8800ff" strokeWidth="1.5" fill="none"/></svg>),
+    moves:[{name:"Life Drain",icon:"🌑",dmg:[26,36]},{name:"Ancient Strike",icon:"⚫",dmg:[28,40]},{name:"Totem Crush",icon:"💀",dmg:[32,44]},{name:"Soul Grab",icon:"🖤",dmg:[20,28],sp:"stun"}]},
+  {id:16,name:"Evil Venom",emoji:"😡",hp:170,diff:"Final Boss",desc:"FINAL BOSS — Corrupted evil Venom! Extremely dangerous!",color:"#3C3489",light:"#EEEDFE",dark:"#26215C",weakness:"sonic",winMsg:"Evil Venom is defeated! Almost there...",
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="28" ry="30" fill="#0a0a1a"/><ellipse cx="40" cy="38" rx="24" ry="26" fill="#111130"/><ellipse cx="30" cy="32" rx="10" ry="7" fill="#cc0000"/><ellipse cx="50" cy="32" rx="10" ry="7" fill="#cc0000"/><ellipse cx="30" cy="32" rx="6" ry="5" fill="#ff4400"/><ellipse cx="50" cy="32" rx="6" ry="5" fill="#ff4400"/><circle cx="30" cy="32" r="2.5" fill="#ffaa00"/><circle cx="50" cy="32" r="2.5" fill="#ffaa00"/><path d="M18 50 Q40 72 62 50" fill="#0a0a1a"/><path d="M18 50 Q40 68 62 50" stroke="white" strokeWidth="2" fill="none"/><line x1="26" y1="51" x2="26" y2="61" stroke="white" strokeWidth="2"/><line x1="36" y1="54" x2="36" y2="64" stroke="white" strokeWidth="2"/><line x1="44" y1="54" x2="44" y2="64" stroke="white" strokeWidth="2"/><line x1="54" y1="51" x2="54" y2="61" stroke="white" strokeWidth="2"/><ellipse cx="40" cy="62" rx="8" ry="5" fill="#cc0000"/></svg>),
+    moves:[{name:"Dark Symbiote",icon:"🖤",dmg:[26,38]},{name:"Evil Bite",icon:"🦷",dmg:[28,40]},{name:"We Are EVIL",icon:"😡",dmg:[32,46]},{name:"Symbiote Surge",icon:"🌑",dmg:[20,30],sp:"stun"}]},
+  {id:17,name:"Acid",emoji:"☠️",hp:180,diff:"TRUE FINAL",desc:"THE ULTIMATE BOSS. Melts webs, poisons you, spawns minions. 180 HP of pure terror!",color:"#1a5c1a",light:"#d4f5d4",dark:"#0a2e0a",weakness:"electric",winMsg:"ACID IS DISSOLVED! You are the ULTIMATE hero! 🌍",acidMeltsWebs:true,poisonDmgPerTurn:4,
+    face:({size=80})=>(<svg width={size} height={size} viewBox="0 0 80 80"><ellipse cx="40" cy="42" rx="28" ry="30" fill="#1a6600"/><ellipse cx="40" cy="38" rx="24" ry="26" fill="#228800"/><ellipse cx="28" cy="50" rx="6" ry="4" fill="#00ff44" fillOpacity="0.6"/><ellipse cx="52" cy="54" rx="5" ry="3" fill="#00ff44" fillOpacity="0.5"/><ellipse cx="30" cy="30" rx="10" ry="8" fill="#003300"/><ellipse cx="50" cy="30" rx="10" ry="8" fill="#003300"/><ellipse cx="30" cy="30" rx="7" ry="6" fill="#00cc00"/><ellipse cx="50" cy="30" rx="7" ry="6" fill="#00cc00"/><circle cx="30" cy="30" r="3" fill="#00ff00"/><circle cx="50" cy="30" r="3" fill="#00ff00"/><circle cx="30" cy="30" r="1.2" fill="#ffffff"/><circle cx="50" cy="30" r="1.2" fill="#ffffff"/><path d="M18 50 Q40 70 62 50" fill="#1a6600"/><path d="M18 50 Q40 66 62 50" stroke="#00ff44" strokeWidth="2" fill="none"/><line x1="24" y1="51" x2="24" y2="60" stroke="#00ff44" strokeWidth="2"/><line x1="33" y1="54" x2="33" y2="63" stroke="#00ff44" strokeWidth="2"/><line x1="40" y1="55" x2="40" y2="64" stroke="#00ff44" strokeWidth="2"/><line x1="47" y1="54" x2="47" y2="63" stroke="#00ff44" strokeWidth="2"/><line x1="56" y1="51" x2="56" y2="60" stroke="#00ff44" strokeWidth="2"/><ellipse cx="40" cy="62" rx="9" ry="5" fill="#00aa22"/><path d="M14 22 Q8 12 12 4" stroke="#00ff44" strokeWidth="3" fill="none" strokeLinecap="round"/><path d="M66 22 Q72 12 68 4" stroke="#00ff44" strokeWidth="3" fill="none" strokeLinecap="round"/><circle cx="12" cy="3" r="3" fill="#00ff44"/><circle cx="68" cy="3" r="3" fill="#00ff44"/></svg>),
+    moves:[{name:"Acid Splash",icon:"🟢",dmg:[28,40],sp:"poison"},{name:"Slime Slam",icon:"💚",dmg:[30,44]},{name:"Web Melt",icon:"🫧",dmg:[24,36],sp:"webmelt"},{name:"Spawn Minion",icon:"☣️",dmg:[16,24],sp:"minion"},{name:"Acid Nova",icon:"☠️",dmg:[36,50]}]},
+];
+
+const DIFF_COLOR={"Easy":{bg:"#EAF3DE",col:"#27500A"},"Medium":{bg:"#FAEEDA",col:"#633806"},"Hard":{bg:"#FCEBEB",col:"#791F1F"},"Very Hard":{bg:"#EEEDFE",col:"#26215C"},"Final Boss":{bg:"#0a0a1a",col:"#ffaa00"},"TRUE FINAL":{bg:"#003300",col:"#00ff44"}};
+const MAX_LIVES=3;
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+function HpBar({pct,color}){
+  return <div style={{background:"#e8e8e0",borderRadius:99,height:10,overflow:"hidden"}}>
+    <div style={{width:Math.max(0,pct)+"%",height:10,borderRadius:99,background:color,transition:"width 0.4s"}}/>
+  </div>;
+}
+
+function FaceAnim({FaceComp,pulse=false,size=72}){
+  const[frame,setFrame]=useState(0);
+  useEffect(()=>{
+    if(!pulse)return;
+    const t=setInterval(()=>setFrame(f=>f+1),800);
+    return()=>clearInterval(t);
+  },[pulse]);
+  const scale=pulse?(1+Math.sin(frame)*0.04):1;
+  return <div style={{transform:`scale(${scale})`,transition:"transform 0.4s",display:"inline-block"}}>
+    <FaceComp size={size}/>
+  </div>;
+}
+
+function App(){
+  const[screen,setScreen]=useState("title");
+  const[selectedPlayer,setSelectedPlayer]=useState(null);
+  const[levelIdx,setLevelIdx]=useState(0);
+  const[lives,setLives]=useState(MAX_LIVES);
+  const[game,setGame]=useState(null);
+  const logRef=useRef(null);
+
+  useEffect(()=>{if(logRef.current)logRef.current.scrollTop=logRef.current.scrollHeight;},[game?.logs]);
+
+  function startLevel(playerKey,lvlIdx,currentLives){
+    const p=PLAYERS[playerKey];const lv=LEVELS[lvlIdx];const w=WEATHERS[rnd(0,WEATHERS.length-1)];
+    setGame({player:{...p,curHP:p.hp},boss:{...lv,curHP:lv.hp},weather:w,weatherRounds:rnd(2,3),turn:"player",
+      logs:[`🎮 Level ${lv.id}: ${p.name} faces ${lv.name}! Weather: ${w.icon} ${w.name} — ${w.desc}`],
+      over:false,winner:null,dodge:0,protect:false,poisoned:false,poisonTurns:0,websMelted:false,minionActive:false});
+    setLives(currentLives);setScreen("battle");
+  }
+
+  function addLog(g,msg){return{...g,logs:[...g.logs.slice(-6),msg]};}
+
+  function nextWeather(g){
+    if(g.weatherRounds<=1){
+      const w=WEATHERS[rnd(0,WEATHERS.length-1)];
+      return{...g,weather:w,weatherRounds:rnd(2,3),logs:[...g.logs.slice(-6),`🌤️ Weather → ${w.icon} ${w.name} — ${w.desc}!`]};
+    }
+    return{...g,weatherRounds:g.weatherRounds-1};
+  }
+
+  function playerMove(move){
+    if(!game||game.over||game.turn!=="player")return;
+    let g={...game,logs:[...game.logs]};
+    if(g.websMelted&&(move.icon==="🕸️"||move.name==="Web Shield"||move.name==="Web Slam")){
+      g=addLog(g,"🫧 Acid melted your webs! That move won't work! Pick another.");setGame(g);return;
+    }
+    if(move.sp==="dodge"){
+      g.dodge=game.weather.windDodge?2:1;
+      g=addLog(g,`${move.icon} ${game.player.name} uses ${move.name}!${game.weather.windDodge?" Wind boost!":""}`);
+      g=nextWeather(g);g.turn="boss";setGame(g);setTimeout(()=>bossMove(g),1200);return;
+    }
+    let miss=game.weather.misschance&&Math.random()<0.35&&move.sp!=="protect";
+    let msg="";
+    if(miss){msg=`${move.icon} ${move.name} — fog causes a MISS!`;}
+    else if(move.sp==="protect"){
+      g.protect=true;const d=rnd(move.dmg[0],move.dmg[1]);g.boss={...g.boss,curHP:g.boss.curHP-d};
+      msg=`🛡️ Shield up! Taps ${game.boss.name} for ${d} dmg.`;
+    }else if(move.sp==="power"){
+      let d=rnd(move.dmg[0],move.dmg[1]);
+      if(game.weather.dmgBonus>0)d+=game.weather.dmgBonus;
+      if(game.weather.storm)d=Math.max(1,d-3);d=Math.max(1,d);
+      const isWeak=(move.icon==="🔥"&&game.boss.weakness==="fire")||(move.icon==="🔊"&&game.boss.weakness==="sonic")||(move.icon==="🔵"&&game.boss.weakness==="power")||(move.icon==="🌸"&&game.boss.weakness==="electric")||(move.icon==="🕸️"&&game.boss.weakness==="web");
+      if(isWeak)d+=18;
+      g.boss={...g.boss,curHP:g.boss.curHP-d};
+      msg=`${move.icon} ${move.name} hits for ${d} dmg!${isWeak?" 🎯 WEAKNESS HIT!":""}`;
+    }else{
+      let d=rnd(move.dmg[0],move.dmg[1])+(game.weather.dmgBonus||0)-(game.weather.dmgPenalty||0);
+      if(game.weather.storm)d-=3;
+      if(game.boss.weakness==="electric"&&(move.icon==="⚡"||move.name==="Electric Kick"||move.name==="Venom Strike"))d+=12;
+      d=Math.max(1,d);
+      const pows=["POW!","CRACK!","THWIP!","WHAM!","BOOM!","ZAP!"];
+      msg=`${move.icon} ${pows[rnd(0,5)]} ${move.name} hits for ${d} dmg!`;
+      g.boss={...g.boss,curHP:g.boss.curHP-d};
+    }
+    g=addLog(g,msg);g=nextWeather(g);
+    if(g.boss.curHP<=0){g.over=true;g.winner="player";g=addLog(g,`🎉 ${game.boss.winMsg}`);setGame(g);return;}
+    g.turn="boss";setGame(g);setTimeout(()=>bossMove(g),1200);
+  }
+
+  function bossMove(cg){
+    setGame(prev=>{
+      let g=cg||prev;if(g.over)return g;
+      const lv=g.boss;const m=lv.moves[rnd(0,lv.moves.length-1)];let msg="";
+      if(g.poisoned&&g.poisonTurns>0){
+        const pd=lv.poisonDmgPerTurn||4;
+        g={...g,player:{...g.player,curHP:g.player.curHP-pd},poisonTurns:g.poisonTurns-1};
+        if(g.poisonTurns===0)g={...g,poisoned:false};
+        g=addLog(g,`☣️ Poison burns for ${pd} dmg! ${g.poisonTurns>0?g.poisonTurns+" turns left":"Poison worn off!"}`);
+        if(g.player.curHP<=0){g.over=true;g.winner="boss";g=addLog(g,"💀 Dissolved by poison!");return g;}
+      }
+      if(g.minionActive){
+        const md=rnd(8,14);g={...g,player:{...g.player,curHP:g.player.curHP-md}};
+        g=addLog(g,`☣️ Acid Minion attacks for ${md} extra dmg!`);
+        if(g.player.curHP<=0){g.over=true;g.winner="boss";g=addLog(g,"💀 Overwhelmed by Acid's minions!");return g;}
+      }
+      if(g.dodge>0){
+        msg=`${m.icon} ${lv.name} tries ${m.name}... DODGED!`;g=addLog({...g,dodge:g.dodge-1},msg);
+      }else if(g.protect&&m.sp!=="poison"&&m.sp!=="webmelt"){
+        let d=Math.max(1,rnd(m.dmg[0],m.dmg[1])-(g.weather.carnagePenalty||0)-(g.weather.storm?3:0));
+        const red=Math.floor(d*0.35);
+        g=addLog({...g,protect:false,player:{...g.player,curHP:g.player.curHP-red}},`${m.icon} Shield blocks! Only ${red} dmg!`);
+      }else{
+        let d=Math.max(1,rnd(m.dmg[0],m.dmg[1])-(g.weather.carnagePenalty||0)-(g.weather.storm?3:0));
+        if(m.sp==="poison"){g={...g,poisoned:true,poisonTurns:3};msg=`🟢 ACID SPLASH! ${d} dmg + POISONED 3 turns! ☣️`;g={...g,player:{...g.player,curHP:g.player.curHP-d}};}
+        else if(m.sp==="webmelt"){g={...g,websMelted:true};msg=`🫧 WEB MELT! Webs dissolved — web moves blocked! +${d} dmg!`;g={...g,player:{...g.player,curHP:g.player.curHP-d}};}
+        else if(m.sp==="minion"){g={...g,minionActive:true};msg=`☣️ Acid SPAWNS a minion! ${d} dmg + minion attacks each turn!`;g={...g,player:{...g.player,curHP:g.player.curHP-d}};}
+        else{msg=`${m.icon} ${lv.name}'s ${m.name} hits for ${d} dmg!`;g={...g,player:{...g.player,curHP:g.player.curHP-d}};}
+        g=addLog(g,msg);
+      }
+      if(g.player.curHP<=0){g.over=true;g.winner="boss";g=addLog(g,`💀 ${g.player.name} is down!`);}
+      else{g.turn="player";}
+      return g;
+    });
+  }
+
+  const card={background:"#fff",border:"0.5px solid #ddd",borderRadius:12,padding:"1rem"};
+  const btn={background:"#fff",border:"0.5px solid #bbb",borderRadius:8,padding:"9px 10px",cursor:"pointer",fontFamily:"inherit",fontSize:13};
+
+  if(screen==="title")return(
+    <div style={{padding:"1.5rem",textAlign:"center"}}>
+      <div style={{fontSize:48,marginBottom:6}}>🕷️</div>
+      <h1 style={{fontSize:22,fontWeight:700,color:"#111",marginBottom:4}}>Spider-Man Universe</h1>
+      <p style={{fontSize:13,color:"#666",marginBottom:"1.5rem"}}>17 boss levels — ending with the terrifying ACID! 3 lives per level.</p>
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:"1.5rem"}}>
+        {Object.values(PLAYERS).map(p=>(
+          <div key={p.id} onClick={()=>setSelectedPlayer(p.id)}
+            style={{...card,borderTop:`3px solid ${p.color}`,cursor:"pointer",outline:selectedPlayer===p.id?`2px solid ${p.color}`:"none"}}>
+            <div style={{marginBottom:8}}><FaceAnim FaceComp={p.face} pulse={selectedPlayer===p.id} size={60}/></div>
+            <div style={{fontSize:13,fontWeight:700,color:"#111",marginBottom:3}}>{p.name}</div>
+            <div style={{fontSize:11,color:"#666",marginBottom:6}}>{p.desc}</div>
+            <span style={{fontSize:11,background:p.light,color:p.dark,padding:"2px 8px",borderRadius:99}}>❤️ {p.hp} HP</span>
+          </div>
+        ))}
+      </div>
+      <div style={{background:"#f0efe8",borderRadius:10,padding:"10px 14px",marginBottom:"1.5rem",fontSize:12,color:"#555",textAlign:"left"}}>
+        <strong style={{color:"#111"}}>How to play:</strong> 3 lives per level. Lose 3 times → back to Level 1! Beat all 17 bosses to win. 🏆 <strong style={{color:"#00aa22"}}>Tip: Electric moves destroy Acid!</strong>
+      </div>
+      {selectedPlayer
+        ?<button onClick={()=>{setLevelIdx(0);startLevel(selectedPlayer,0,MAX_LIVES);}}
+          style={{...btn,padding:"10px 32px",border:`1.5px solid ${PLAYERS[selectedPlayer].color}`,background:PLAYERS[selectedPlayer].light,color:PLAYERS[selectedPlayer].dark,fontSize:15,fontWeight:700}}>
+          Start Game ↗
+        </button>
+        :<p style={{fontSize:13,color:"#888"}}>Pick a hero above!</p>
+      }
+    </div>
+  );
+
+  if(screen==="levelup"){
+    const nextLv=LEVELS[levelIdx];const dc=DIFF_COLOR[nextLv.diff]||{bg:"#003300",col:"#00ff44"};
+    return(
+      <div style={{padding:"1.5rem",textAlign:"center"}}>
+        <div style={{fontSize:40,marginBottom:6}}>🏆</div>
+        <h2 style={{fontSize:20,fontWeight:700,color:"#111",marginBottom:4}}>Level {levelIdx} Complete!</h2>
+        <p style={{fontSize:13,color:"#666",marginBottom:"1.5rem"}}>Choose your hero for the next fight!</p>
+        <div style={{...card,marginBottom:"1.5rem",background:"#f9f9f6"}}>
+          <div style={{marginBottom:6}}><FaceAnim FaceComp={nextLv.face} pulse size={64}/></div>
+          <div style={{fontSize:15,fontWeight:700,color:"#111",marginBottom:4}}>Level {nextLv.id}: {nextLv.name}</div>
+          <div style={{fontSize:12,color:"#666",marginBottom:8}}>{nextLv.desc}</div>
+          <div style={{display:"flex",justifyContent:"center",gap:8,flexWrap:"wrap"}}>
+            <span style={{fontSize:11,background:dc.bg,color:dc.col,padding:"2px 10px",borderRadius:99,fontWeight:700}}>{nextLv.diff}</span>
+            <span style={{fontSize:11,background:"#FCEBEB",color:"#791F1F",padding:"2px 10px",borderRadius:99}}>❤️ {nextLv.hp} HP</span>
+            {nextLv.acidMeltsWebs&&<span style={{fontSize:11,background:"#d4f5d4",color:"#0a2e0a",padding:"2px 10px",borderRadius:99}}>🫧 Melts webs!</span>}
+          </div>
+        </div>
+        <p style={{fontSize:12,color:"#666",marginBottom:10}}>Pick your hero — 3 fresh lives!</p>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:"1.5rem"}}>
+          {Object.values(PLAYERS).map(p=>(
+            <div key={p.id} onClick={()=>setSelectedPlayer(p.id)}
+              style={{...card,borderTop:`3px solid ${p.color}`,cursor:"pointer",outline:selectedPlayer===p.id?`2px solid ${p.color}`:"none"}}>
+              <div style={{marginBottom:4}}><FaceAnim FaceComp={p.face} pulse={selectedPlayer===p.id} size={52}/></div>
+              <div style={{fontSize:12,fontWeight:700,color:"#111",marginBottom:3}}>{p.name}</div>
+              <span style={{fontSize:11,background:p.light,color:p.dark,padding:"1px 6px",borderRadius:99}}>❤️ {p.hp}</span>
+            </div>
+          ))}
+        </div>
+        {selectedPlayer
+          ?<button onClick={()=>startLevel(selectedPlayer,levelIdx,MAX_LIVES)}
+            style={{...btn,padding:"10px 28px",border:`1.5px solid ${PLAYERS[selectedPlayer].color}`,background:PLAYERS[selectedPlayer].light,color:PLAYERS[selectedPlayer].dark,fontWeight:700}}>
+            Fight Level {nextLv.id}! ↗
+          </button>
+          :<p style={{fontSize:13,color:"#888"}}>Pick a hero above!</p>
+        }
+      </div>
+    );
+  }
+
+  if(screen==="gameover")return(
+    <div style={{padding:"1.5rem",textAlign:"center"}}>
+      <div style={{fontSize:52,marginBottom:8}}>💀</div>
+      <h1 style={{fontSize:22,fontWeight:700,color:"#111",marginBottom:8}}>Game Over!</h1>
+      <p style={{fontSize:14,color:"#666",marginBottom:"1.5rem"}}>You lost 3 times on Level {LEVELS[levelIdx].id} — {LEVELS[levelIdx].name}. Back to the start!</p>
+      <div style={{...card,marginBottom:"1.5rem",background:"#f9f9f6"}}>
+        <FaceAnim FaceComp={LEVELS[levelIdx].face} size={60}/>
+        <p style={{fontSize:13,color:"#666",marginTop:8}}>Heroes never give up — try again!</p>
+      </div>
+      <button onClick={()=>{setLevelIdx(0);setSelectedPlayer(null);setScreen("title");}}
+        style={{...btn,padding:"10px 28px",fontWeight:700,border:"0.5px solid #E24B4A",background:"#FCEBEB",color:"#A32D2D"}}>
+        Try Again from Level 1
+      </button>
+    </div>
+  );
+
+  if(screen==="gamecomplete")return(
+    <div style={{padding:"1.5rem",textAlign:"center"}}>
+      <div style={{fontSize:56,marginBottom:8}}>🏅</div>
+      <h1 style={{fontSize:22,fontWeight:700,color:"#111",marginBottom:8}}>YOU BEAT THE GAME!</h1>
+      <p style={{fontSize:14,color:"#666",marginBottom:"1.5rem"}}>All 17 villains defeated — even ACID! You are a TRUE ULTIMATE hero!</p>
+      <div style={{display:"flex",justifyContent:"center",gap:8,marginBottom:"1.5rem",flexWrap:"wrap"}}>
+        {Object.values(PLAYERS).map(p=><FaceAnim key={p.id} FaceComp={p.face} pulse size={52}/>)}
+      </div>
+      <button onClick={()=>{setLevelIdx(0);setSelectedPlayer(null);setScreen("title");}} style={{...btn,padding:"10px 28px"}}>Play Again</button>
+    </div>
+  );
+
+  if(screen==="battle"&&game){
+    const{player,boss,weather,turn:t,logs,over,winner,dodge,protect,poisoned,poisonTurns,websMelted,minionActive}=game;
+    const sHPpct=player.curHP/player.hp*100,bHPpct=boss.curHP/boss.hp*100;
+    const dc=DIFF_COLOR[boss.diff]||{bg:"#003300",col:"#00ff44"};
+    const livesLeft=over&&winner==="boss"?lives-1:lives;
+    const isAcid=boss.acidMeltsWebs;
+    return(
+      <div style={{padding:"1rem"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,flexWrap:"wrap",gap:6}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <span style={{fontSize:12,fontWeight:700,color:"#666"}}>Lv {boss.id}/17</span>
+            <span style={{fontSize:11,background:dc.bg,color:dc.col,padding:"1px 8px",borderRadius:99,fontWeight:700}}>{boss.diff}</span>
+          </div>
+          <div style={{display:"flex",gap:4,alignItems:"center"}}>
+            <span style={{fontSize:11,color:"#666"}}>Lives:</span>
+            {Array.from({length:MAX_LIVES}).map((_,i)=>(
+              <span key={i} style={{fontSize:14}}>{i<(over&&winner==="boss"?livesLeft:lives)?"❤️":"🖤"}</span>
+            ))}
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:5,padding:"4px 10px",borderRadius:8,background:"#f0efe8",border:"0.5px solid #ddd",fontSize:11}}>
+            <span style={{fontSize:14}}>{weather.icon}</span>
+            <span style={{fontWeight:700,color:"#111"}}>{weather.name}</span>
+            <span style={{color:"#666",fontSize:10}}>— {weather.desc}</span>
+          </div>
+        </div>
+        {isAcid&&(
+          <div style={{display:"flex",gap:6,marginBottom:8,flexWrap:"wrap"}}>
+            {poisoned&&<span style={{fontSize:11,background:"#d4f5d4",color:"#0a2e0a",padding:"2px 8px",borderRadius:99}}>☣️ Poisoned ({poisonTurns} turns)</span>}
+            {websMelted&&<span style={{fontSize:11,background:"#FAEEDA",color:"#633806",padding:"2px 8px",borderRadius:99}}>🫧 Webs melted!</span>}
+            {minionActive&&<span style={{fontSize:11,background:"#FCEBEB",color:"#791F1F",padding:"2px 8px",borderRadius:99}}>☣️ Minion active!</span>}
+          </div>
+        )}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:10}}>
+          {[
+            {label:player.name,FaceComp:player.face,hp:player.curHP,max:player.hp,pct:sHPpct,color:player.color,border:player.color,statusDodge:dodge>0,statusProt:protect,isPlayer:true},
+            {label:boss.name,FaceComp:boss.face,hp:boss.curHP,max:boss.hp,pct:bHPpct,color:boss.color,border:boss.color},
+          ].map((f,i)=>(
+            <div key={i} style={{...card,borderTop:`3px solid ${f.border}`,textAlign:"center"}}>
+              <FaceAnim FaceComp={f.FaceComp} pulse={t===(f.isPlayer?"player":"boss")&&!over} size={60}/>
+              <div style={{fontSize:12,fontWeight:700,color:"#111",marginBottom:5,marginTop:4}}>{f.label}</div>
+              <HpBar pct={f.pct} color={f.color}/>
+              <div style={{fontSize:11,fontWeight:700,color:"#111",marginTop:3}}>{Math.max(0,f.hp)} / {f.max}</div>
+              {f.statusDodge&&<div style={{marginTop:3}}><span style={{fontSize:10,background:"#EEEDFE",color:"#3C3489",padding:"1px 7px",borderRadius:99}}>⚡ Dodging</span></div>}
+              {f.statusProt&&<div style={{marginTop:3}}><span style={{fontSize:10,background:"#EAF3DE",color:"#3B6D11",padding:"1px 7px",borderRadius:99}}>🛡️ Protected</span></div>}
+            </div>
+          ))}
+        </div>
+        <div ref={logRef} style={{background:"#f0efe8",borderRadius:10,padding:"10px 12px",marginBottom:10,minHeight:72,maxHeight:120,overflowY:"auto"}}>
+          {logs.map((l,i)=>(
+            <div key={i} style={{fontSize:12,lineHeight:1.6,color:"#111",fontWeight:i===logs.length-1?700:400,padding:"1px 0"}}>{l}</div>
+          ))}
+        </div>
+        {!over&&(
+          <>
+            <div style={{textAlign:"center",marginBottom:7}}>
+              <span style={{fontSize:12,fontWeight:700,padding:"4px 12px",borderRadius:99,background:t==="player"?player.light:"#FCEBEB",color:t==="player"?player.dark:"#A32D2D"}}>
+                {t==="player"?`${player.name}'s turn`:`${boss.name} is attacking...`}
+              </span>
+            </div>
+            {isAcid&&t==="player"&&<p style={{fontSize:11,color:"#00aa22",textAlign:"center",marginBottom:6}}>⚡ Electric moves are super effective vs Acid!</p>}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+              {player.moves.map((m,i)=>{
+                const isBlocked=websMelted&&(m.icon==="🕸️"||m.name==="Web Shield"||m.name==="Web Slam");
+                return(
+                  <button key={i} disabled={t!=="player"} onClick={()=>playerMove(m)}
+                    style={{...btn,opacity:t==="player"?1:0.4,cursor:t==="player"?"pointer":"not-allowed",textAlign:"left",
+                      border:isBlocked?"0.5px solid #F7C1C1":"0.5px solid #bbb",
+                      background:isBlocked?"#FCEBEB":"#fff"}}>
+                    <div style={{fontSize:15,marginBottom:2}}>{m.icon}</div>
+                    <div style={{fontSize:12,fontWeight:700,color:isBlocked?"#A32D2D":"#111"}}>{m.name}{isBlocked?" 🚫":""}</div>
+                    <div style={{fontSize:10,color:"#666",marginTop:1}}>{m.sp==="dodge"?"Dodge next attack!":m.sp==="protect"?"Block + "+m.dmg[0]+"-"+m.dmg[1]+" dmg":m.dmg[0]+"-"+m.dmg[1]+" dmg"}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </>
+        )}
+        {over&&(
+          <div style={{marginTop:10}}>
+            <div style={{textAlign:"center",padding:"1rem",borderRadius:10,background:winner==="player"?"#EAF3DE":"#FCEBEB",border:`0.5px solid ${winner==="player"?"#C0DD97":"#F7C1C1"}`,marginBottom:10}}>
+              <div style={{fontSize:17,fontWeight:700,color:winner==="player"?"#27500A":"#791F1F"}}>
+                {winner==="player"?`🏆 ${player.name} wins!`:`💀 You lost! ${livesLeft} ${livesLeft===1?"life":"lives"} left`}
+              </div>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              {winner==="player"&&levelIdx<LEVELS.length-1&&(
+                <button onClick={()=>{setLevelIdx(levelIdx+1);setScreen("levelup");}} style={{...btn,background:"#EAF3DE",color:"#27500A",border:"0.5px solid #C0DD97",fontWeight:700}}>Next Level ↗</button>
+              )}
+              {winner==="player"&&levelIdx>=LEVELS.length-1&&(
+                <button onClick={()=>setScreen("gamecomplete")} style={{...btn,background:"#EAF3DE",color:"#27500A",border:"0.5px solid #C0DD97",fontWeight:700}}>🏅 Victory!</button>
+              )}
+              {winner==="boss"&&livesLeft>0&&(
+                <button onClick={()=>startLevel(player.id,levelIdx,livesLeft)} style={{...btn,background:"#FAEEDA",color:"#633806",border:"0.5px solid #FAC775",fontWeight:700}}>
+                  Retry ({livesLeft} {livesLeft===1?"life":"lives"} left)
+                </button>
+              )}
+              {winner==="boss"&&livesLeft<=0&&(
+                <button onClick={()=>setScreen("gameover")} style={{...btn,background:"#FCEBEB",color:"#791F1F",border:"0.5px solid #F7C1C1",fontWeight:700}}>Game Over 💀</button>
+              )}
+              <button onClick={()=>{setSelectedPlayer(null);setScreen("title");}} style={{...btn}}>Main Menu</button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+  return null;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
